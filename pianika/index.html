@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pianica Virtual Interaktif</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Nunito:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        .pianica-font {
+            font-family: 'Nunito', sans-serif;
+        }
+
+        /* 3D Casing Styling */
+        .pianica-body {
+            background: linear-gradient(180deg, #60a5fa 0%, #3b82f6 40%, #2563eb 85%, #1d4ed8 100%);
+            box-shadow: 
+                0 15px 25px -5px rgba(0, 0, 0, 0.4),
+                inset 0 2px 4px rgba(255, 255, 255, 0.4),
+                inset 0 -4px 6px rgba(0, 0, 0, 0.3);
+            border-radius: 40px 18px 18px 40px;
+        }
+
+        .keyboard-bed {
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            box-shadow: inset 0 3px 6px rgba(0,0,0,0.8);
+        }
+
+        /* Tuts Putih */
+        .white-key {
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 85%, #e2e8f0 100%);
+            box-shadow: 
+                -1px 0 0 rgba(255, 255, 255, 0.8) inset,
+                -2px 0 3px rgba(0, 0, 0, 0.1) inset,
+                0 4px 6px rgba(0, 0, 0, 0.3);
+            transition: transform 0.05s ease, background 0.05s ease, box-shadow 0.05s ease;
+            transform-origin: top center;
+        }
+
+        .white-key.active, .white-key:active {
+            background: linear-gradient(180deg, #e2e8f0 0%, #cbd5e1 100%);
+            transform: scaleY(0.985) translateY(2px);
+            box-shadow: 
+                inset 0 2px 4px rgba(0, 0, 0, 0.3),
+                0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .white-key.highlight {
+            background: linear-gradient(180deg, #fef08a 0%, #fde047 100%) !important;
+        }
+
+        /* Tuts Hitam */
+        .black-key {
+            background: linear-gradient(180deg, #334155 0%, #1e293b 60%, #0f172a 100%);
+            box-shadow: 
+                inset 0 1px 1px rgba(255, 255, 255, 0.3),
+                inset -1px 0 2px rgba(255, 255, 255, 0.1),
+                3px 5px 8px rgba(0, 0, 0, 0.5);
+            transition: transform 0.05s ease, background 0.05s ease, box-shadow 0.05s ease;
+            transform-origin: top center;
+        }
+
+        .black-key.active, .black-key:active {
+            background: linear-gradient(180deg, #1e293b 0%, #020617 100%);
+            transform: scaleY(0.97) translateY(2px);
+            box-shadow: 
+                inset 0 2px 4px rgba(0, 0, 0, 0.8),
+                1px 2px 4px rgba(0, 0, 0, 0.4);
+        }
+
+        .black-key.highlight {
+            background: linear-gradient(180deg, #ca8a04 0%, #854d0e 100%) !important;
+        }
+
+        /* Custom Scrollbar for small screens */
+        .keyboard-container::-webkit-scrollbar {
+            height: 8px;
+        }
+        .keyboard-container::-webkit-scrollbar-track {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        .keyboard-container::-webkit-scrollbar-thumb {
+            background: #3b82f6;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between p-2 sm:p-6">
+
+    <!-- Header & Control Bar -->
+    <header class="max-w-6xl w-full mx-auto mb-4 bg-slate-800/80 backdrop-blur border border-slate-700 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-4 shadow-lg">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center font-black text-xl shadow-inner text-white">🎹</div>
+            <div>
+                <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                    Pianica Utama <span class="text-xs px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded-full border border-blue-500/30">32 Keys</span>
+                </h1>
+                <p class="text-xs text-slate-400">Not Angka Asli & Pengontrol Suara Audio API</p>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="flex flex-wrap items-center gap-3 text-sm">
+            <!-- Mode Panduan Lagu -->
+            <div class="flex items-center gap-2 bg-slate-900/60 p-1.5 rounded-xl border border-slate-700">
+                <span class="text-xs text-slate-400 pl-2">Lagu:</span>
+                <select id="songSelect" class="bg-slate-800 text-xs font-semibold text-blue-300 rounded-lg px-2 py-1 border border-slate-600 focus:outline-none focus:border-blue-500">
+                    <option value="none">-- Bebas Main --</option>
+                    <option value="kartini">Ibu Kita Kartini</option>
+                    <option value="twinkle">Bintang Kecil / Twinkle</option>
+                    <option value="gundul">Gundul Pacul</option>
+                </select>
+                <button id="btnPlaySong" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-1 rounded-lg font-bold transition shadow">
+                    Mulai Lagu
+                </button>
+            </div>
+
+            <!-- Toggle Label Keyboard -->
+            <button id="toggleKeyboardKeys" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-xl border border-slate-600 transition flex items-center gap-1.5">
+                <span>⌨️</span> <span id="lblToggleKeys">Sembunyikan Tombol PC</span>
+            </button>
+
+            <!-- Volume Slider -->
+            <div class="flex items-center gap-2 bg-slate-900/60 px-3 py-1.5 rounded-xl border border-slate-700">
+                <span class="text-xs text-slate-400">🔊</span>
+                <input type="range" id="volumeControl" min="0" max="1" step="0.05" value="0.7" class="w-16 sm:w-24 accent-blue-500 cursor-pointer">
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Pianica Frame -->
+    <main class="max-w-6xl w-full mx-auto my-auto py-4">
+        <div class="pianica-body p-4 sm:p-7 relative shadow-2xl border-4 border-blue-400/30">
+            
+            <!-- Vent Air Holes (Top Decorative) -->
+            <div class="absolute top-2.5 left-24 right-12 flex justify-around opacity-40">
+                <div class="h-1.5 w-12 bg-slate-900 rounded-full"></div>
+                <div class="h-1.5 w-12 bg-slate-900 rounded-full"></div>
+                <div class="h-1.5 w-12 bg-slate-900 rounded-full"></div>
+                <div class="h-1.5 w-12 bg-slate-900 rounded-full"></div>
+                <div class="h-1.5 w-12 bg-slate-900 rounded-full"></div>
+                <div class="h-1.5 w-12 bg-slate-900 rounded-full"></div>
+            </div>
+
+            <!-- Left Mouthpiece Pipe / Selang Tiup -->
+            <div class="absolute -left-7 top-1/2 -translate-y-1/2 flex items-center">
+                <div class="w-8 h-12 bg-gradient-to-r from-slate-200 to-slate-400 rounded-l-full shadow-md border-r border-slate-500 flex items-center justify-center">
+                    <div class="w-3 h-6 bg-slate-800 rounded-full"></div>
+                </div>
+            </div>
+
+            <!-- Pianica Keyboard Bed -->
+            <div class="keyboard-bed p-2 rounded-xl relative overflow-x-auto keyboard-container">
+                <div id="keyboard" class="relative flex min-w-[850px] h-60 sm:h-72 select-none">
+                    <!-- Tuts Pianica akan dimasukkan melalui JavaScript -->
+                </div>
+            </div>
+
+            <!-- Brand / Logo Pianica -->
+            <div class="mt-3 flex justify-between items-center text-xs text-blue-100 font-extrabold tracking-widest px-2 opacity-80">
+                <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+                    <span>32 KEY MELODICA / PIANICA</span>
+                </div>
+                <span>HIGH QUALITY REED SOUND</span>
+            </div>
+        </div>
+    </main>
+
+    <!-- Visual Guidance Banner & Keymap Helper -->
+    <footer class="max-w-6xl w-full mx-auto mt-4 bg-slate-800/60 backdrop-blur border border-slate-700/60 p-4 rounded-2xl text-xs text-slate-300">
+        <div class="flex flex-wrap justify-between items-center gap-4">
+            <div>
+                <span class="font-bold text-blue-400">Keterangan Not Angka:</span>
+                <p class="mt-1 text-slate-400">
+                    <span class="inline-block px-1.5 py-0.5 bg-slate-700 rounded mr-1">4.</span> Nada Rendah (Titik Bawah) |
+                    <span class="inline-block px-1.5 py-0.5 bg-slate-700 rounded mx-1">1 2 3</span> Nada Sedang |
+                    <span class="inline-block px-1.5 py-0.5 bg-slate-700 rounded mx-1">1̇ 2̇</span> Nada Tinggi (Titik Atas) |
+                    <span class="inline-block px-1.5 py-0.5 bg-slate-700 rounded ml-1">1̈ 2̈</span> Nada Sangat Tinggi (Dua Titik Atas)
+                </p>
+            </div>
+            <div id="songStatus" class="font-bold text-amber-300 bg-amber-950/40 border border-amber-600/30 px-3 py-1.5 rounded-xl hidden">
+                🎵 Petunjuk Lagu Active
+            </div>
+        </div>
+    </footer>
+
+    <!-- Audio & Keyboard Script Logic -->
+    <script>
+        // Data Tuts Pianica (32 Keys: Dari Low F / 4. sampai High F / 4̈)
+        // Terdiri dari Not Angka Asli Pianica & Mapping Keyboard Komputer (QWERTY Layout)
+        const keyData = [
+            // Octave Rendah (Low Notes 4. sampai 7.) -> Row Z-X-C-V-B-N-M
+            { note: "F3",  type: "white", num: "4", dot: "below", pcKey: "z", pitch: 174.61 },
+            { note: "F#3", type: "black", num: "4̸", dot: "below", pcKey: "a", pitch: 185.00 },
+            { note: "G3",  type: "white", num: "5", dot: "below", pcKey: "x", pitch: 196.00 },
+            { note: "G#3", type: "black", num: "5̸", dot: "below", pcKey: "s", pitch: 207.65 },
+            { note: "A3",  type: "white", num: "6", dot: "below", pcKey: "c", pitch: 220.00 },
+            { note: "A#3", type: "black", num: "6̸", dot: "below", pcKey: "d", pitch: 233.08 },
+            { note: "B3",  type: "white", num: "7", dot: "below", pcKey: "v", pitch: 246.94 },
+
+            // Octave Sedang (Do-Re-Mi Utama / C4 ke atas) -> Dimulai dari huruf QWERTY 'Q'
+            { note: "C4",  type: "white", num: "1", dot: "none", pcKey: "q", pitch: 261.63 },
+            { note: "C#4", type: "black", num: "1̸", dot: "none", pcKey: "2", pitch: 277.18 },
+            { note: "D4",  type: "white", num: "2", dot: "none", pcKey: "w", pitch: 293.66 },
+            { note: "D#4", type: "black", num: "2̸", dot: "none", pcKey: "3", pitch: 311.13 },
+            { note: "E4",  type: "white", num: "3", dot: "none", pcKey: "e", pitch: 329.63 },
+            { note: "F4",  type: "white", num: "4", dot: "none", pcKey: "r", pitch: 349.23 },
+            { note: "F#4", type: "black", num: "4̸", dot: "none", pcKey: "5", pitch: 369.99 },
+            { note: "G4",  type: "white", num: "5", dot: "none", pcKey: "t", pitch: 392.00 },
+            { note: "G#4", type: "black", num: "5̸", dot: "none", pcKey: "6", pitch: 415.30 },
+            { note: "A4",  type: "white", num: "6", dot: "none", pcKey: "y", pitch: 440.00 },
+            { note: "A#4", type: "black", num: "6̸", dot: "none", pcKey: "7", pitch: 466.16 },
+            { note: "B4",  type: "white", num: "7", dot: "none", pcKey: "u", pitch: 493.88 },
+
+            // Octave Tinggi (High Notes 1̇ 2̇ 3̇ 4̇ 5̇ 6̇ 7̇) -> Melanjutkan Row QWERTY: I-O-P-[-\]
+            { note: "C5",  type: "white", num: "1", dot: "above", pcKey: "i", pitch: 523.25 },
+            { note: "C#5", type: "black", num: "1̸", dot: "above", pcKey: "9", pitch: 554.37 },
+            { note: "D5",  type: "white", num: "2", dot: "above", pcKey: "o", pitch: 587.33 },
+            { note: "D#5", type: "black", num: "2̸", dot: "above", pcKey: "0", pitch: 622.25 },
+            { note: "E5",  type: "white", num: "3", dot: "above", pcKey: "p", pitch: 659.25 },
+            { note: "F5",  type: "white", num: "4", dot: "above", pcKey: "[", pitch: 698.46 },
+            { note: "F#5", type: "black", num: "4̸", dot: "above", pcKey: "=", pitch: 739.99 },
+            { note: "G5",  type: "white", num: "5", dot: "above", pcKey: "]", pitch: 783.99 },
+            { note: "G#5", type: "black", num: "5̸", dot: "above", pcKey: "f", pitch: 830.61 },
+            { note: "A5",  type: "white", num: "6", dot: "above", pcKey: "g", pitch: 880.00 },
+            { note: "A#5", type: "black", num: "6̸", dot: "above", pcKey: "h", pitch: 932.33 },
+            { note: "B5",  type: "white", num: "7", dot: "above", pcKey: "j", pitch: 987.77 },
+
+            // Extra High Keys (Nada Sangat Tinggi 1̈ 2̈ 3̈ 4̈) -> Row Home Row: K-L-;-'-Enter
+            { note: "C6",  type: "white", num: "1", dot: "double-above", pcKey: "k", pitch: 1046.50 },
+            { note: "C#6", type: "black", num: "1̸", dot: "double-above", pcKey: "l", pitch: 1108.73 },
+            { note: "D6",  type: "white", num: "2", dot: "double-above", pcKey: ";", pitch: 1174.66 },
+            { note: "D#6", type: "black", num: "2̸", dot: "double-above", pcKey: "'", pitch: 1244.51 },
+            { note: "E6",  type: "white", num: "3", dot: "double-above", pcKey: "b", pitch: 1318.51 },
+            { note: "F6",  type: "white", num: "4", dot: "double-above", pcKey: "n", pitch: 1396.91 }
+        ];
+
+        // Lagu-lagu untuk mode latihan (Array Note Index)
+        const songs = {
+            kartini: [
+                { note: "C4", duration: 400 }, { note: "D4", duration: 400 }, { note: "E4", duration: 400 }, { note: "F4", duration: 400 },
+                { note: "G4", duration: 600 }, { note: "E4", duration: 300 }, { note: "C4", duration: 500 },
+                { note: "A4", duration: 400 }, { note: "C5", duration: 400 }, { note: "B4", duration: 400 }, { note: "A4", duration: 400 },
+                { note: "G4", duration: 800 }
+            ],
+            twinkle: [
+                { note: "C4", duration: 400 }, { note: "C4", duration: 400 }, { note: "G4", duration: 400 }, { note: "G4", duration: 400 },
+                { note: "A4", duration: 400 }, { note: "A4", duration: 400 }, { note: "G4", duration: 800 },
+                { note: "F4", duration: 400 }, { note: "F4", duration: 400 }, { note: "E4", duration: 400 }, { note: "E4", duration: 400 },
+                { note: "D4", duration: 400 }, { note: "D4", duration: 400 }, { note: "C4", duration: 800 }
+            ],
+            gundul: [
+                { note: "C4", duration: 400 }, { note: "E4", duration: 400 }, { note: "C4", duration: 400 }, { note: "E4", duration: 400 },
+                { note: "F4", duration: 400 }, { note: "D4", duration: 400 }, { note: "D4", duration: 800 },
+                { note: "C4", duration: 400 }, { note: "E4", duration: 400 }, { note: "C4", duration: 400 }, { note: "E4", duration: 400 },
+                { note: "D4", duration: 400 }, { note: "C4", duration: 800 }
+            ]
+        };
+
+        let showPCKeys = true;
+        let activeNodes = {}; // Simpan Oscillator yang sedang bunyi
+        let audioCtx = null;
+        let masterGain = null;
+
+        // Inisialisasi Audio Context
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+                masterGain = audioCtx.createGain();
+                masterGain.gain.value = parseFloat(document.getElementById('volumeControl').value);
+                masterGain.connect(audioCtx.destination);
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // Sintesis Suara Pianica (Melodica Reed Engine)
+        function playNote(noteInfo) {
+            initAudio();
+            if (activeNodes[noteInfo.note]) return; // Cegah duplikasi suara jika tombol ditahan
+
+            const freq = noteInfo.pitch;
+
+            // 1. Dual Oscillator (Square + Triangle untuk karakter Reed/Pianica)
+            const osc1 = audioCtx.createOscillator();
+            const osc2 = audioCtx.createOscillator();
+
+            osc1.type = 'sawtooth';
+            osc2.type = 'triangle';
+
+            osc1.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            osc2.frequency.setValueAtTime(freq * 1.001, audioCtx.currentTime); // Subtle detune
+
+            // 2. Lowpass Filter untuk meredam kecerahan tajam khas pianica
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(freq * 3.5, audioCtx.currentTime);
+
+            // 3. Envelope Gain
+            const noteGain = audioCtx.createGain();
+            const now = audioCtx.currentTime;
+            
+            // Attack cepat khas instrumen tiup
+            noteGain.gain.setValueAtTime(0, now);
+            noteGain.gain.linearRampToValueAtTime(0.8, now + 0.03);
+
+            // Hubungkan node
+            osc1.connect(filter);
+            osc2.connect(filter);
+            filter.connect(noteGain);
+            noteGain.connect(masterGain);
+
+            osc1.start();
+            osc2.start();
+
+            activeNodes[noteInfo.note] = {
+                osc1: osc1,
+                osc2: osc2,
+                gain: noteGain
+            };
+
+            // Visual Key Press Effect
+            const keyEl = document.getElementById(`key-${noteInfo.note}`);
+            if (keyEl) keyEl.classList.add('active');
+        }
+
+        function stopNote(noteInfo) {
+            if (!activeNodes[noteInfo.note]) return;
+
+            const { osc1, osc2, gain } = activeNodes[noteInfo.note];
+            const now = audioCtx.currentTime;
+
+            // Release singkat khas tuts dilepas
+            gain.gain.setValueAtTime(gain.gain.value, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+            setTimeout(() => {
+                try {
+                    osc1.stop();
+                    osc2.stop();
+                    osc1.disconnect();
+                    osc2.disconnect();
+                } catch(e){}
+            }, 90);
+
+            delete activeNodes[noteInfo.note];
+
+            // Visual Remove Key Press Effect
+            const keyEl = document.getElementById(`key-${noteInfo.note}`);
+            if (keyEl) keyEl.classList.remove('active');
+        }
+
+        // Render Tuts Pianica ke DOM
+        function renderKeyboard() {
+            const keyboardEl = document.getElementById('keyboard');
+            keyboardEl.innerHTML = '';
+
+            let whiteKeysCount = keyData.filter(k => k.type === 'white').length;
+            let currentWhiteIndex = 0;
+
+            keyData.forEach((key, index) => {
+                const keyEl = document.createElement('div');
+                keyEl.id = `key-${key.note}`;
+                
+                // Format Tampilan Not Angka (Titik Atas / Bawah)
+                let dotHTML = '';
+                if (key.dot === 'below') {
+                    dotHTML = `<span class="block -mt-1 text-base leading-none font-bold">.</span>`;
+                } else if (key.dot === 'above') {
+                    dotHTML = `<span class="block -mb-1 text-base leading-none font-bold">.</span>`;
+                } else if (key.dot === 'double-above') {
+                    dotHTML = `<span class="block -mb-2 text-sm leading-none font-bold">..</span>`;
+                }
+
+                // Render Not Angka
+                let notationHTML = '';
+                if (key.dot === 'above' || key.dot === 'double-above') {
+                    notationHTML = `${dotHTML}<span class="pianica-font text-lg sm:text-xl font-extrabold">${key.num}</span>`;
+                } else if (key.dot === 'below') {
+                    notationHTML = `<span class="pianica-font text-lg sm:text-xl font-extrabold">${key.num}</span>${dotHTML}`;
+                } else {
+                    notationHTML = `<span class="pianica-font text-lg sm:text-xl font-extrabold">${key.num}</span>`;
+                }
+
+                if (key.type === 'white') {
+                    keyEl.className = `white-key relative flex flex-col justify-end items-center pb-3 rounded-b-lg border border-slate-300 text-slate-900 cursor-pointer z-10`;
+                    keyEl.style.width = `${100 / whiteKeysCount}%`;
+                    keyEl.style.height = '100%';
+
+                    keyEl.innerHTML = `
+                        <div class="flex flex-col items-center justify-center mb-1">
+                            ${notationHTML}
+                        </div>
+                        <span class="pc-key-label text-[10px] font-bold text-slate-400 uppercase bg-slate-200 px-1.5 py-0.5 rounded border border-slate-300 ${showPCKeys ? '' : 'hidden'}">
+                            ${key.pcKey}
+                        </span>
+                    `;
+                    currentWhiteIndex++;
+                } else {
+                    // Tuts Hitam posisi melayang di atas tuts putih
+                    keyEl.className = `black-key absolute flex flex-col justify-end items-center pb-2 rounded-b-md text-white cursor-pointer z-20`;
+                    keyEl.style.width = `${(100 / whiteKeysCount) * 0.65}%`;
+                    keyEl.style.height = '60%';
+                    
+                    // Menghitung offset X berdasarkan tuts putih sebelumnya
+                    const leftPos = ((currentWhiteIndex) * (100 / whiteKeysCount)) - ((100 / whiteKeysCount) * 0.325);
+                    keyEl.style.left = `${leftPos}%`;
+
+                    keyEl.innerHTML = `
+                        <div class="flex flex-col items-center justify-center mb-1">
+                            ${notationHTML}
+                        </div>
+                        <span class="pc-key-label text-[9px] font-bold text-slate-400 uppercase bg-slate-800 px-1 py-0.5 rounded border border-slate-700 ${showPCKeys ? '' : 'hidden'}">
+                            ${key.pcKey}
+                        </span>
+                    `;
+                }
+
+                // Event Listeners Mouse & Touch
+                const startPlay = (e) => {
+                    e.preventDefault();
+                    playNote(key);
+                };
+                const stopPlay = (e) => {
+                    e.preventDefault();
+                    stopNote(key);
+                };
+
+                keyEl.addEventListener('mousedown', startPlay);
+                keyEl.addEventListener('mouseup', stopPlay);
+                keyEl.addEventListener('mouseleave', stopPlay);
+
+                keyEl.addEventListener('touchstart', startPlay, { passive: false });
+                keyEl.addEventListener('touchend', stopPlay, { passive: false });
+
+                keyboardEl.appendChild(keyEl);
+            });
+        }
+
+        // Listener Keyboard Komputer (PC Keys)
+        const activePcKeys = new Set();
+
+        window.addEventListener('keydown', (e) => {
+            if (e.repeat) return;
+            const inputKey = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+            
+            const matchedNote = keyData.find(k => k.pcKey.toLowerCase() === inputKey);
+            if (matchedNote && !activePcKeys.has(inputKey)) {
+                activePcKeys.add(inputKey);
+                playNote(matchedNote);
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            const inputKey = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+            const matchedNote = keyData.find(k => k.pcKey.toLowerCase() === inputKey);
+            if (matchedNote) {
+                activePcKeys.delete(inputKey);
+                stopNote(matchedNote);
+            }
+        });
+
+        // Toggle Tombol PC Legend
+        document.getElementById('toggleKeyboardKeys').addEventListener('click', () => {
+            showPCKeys = !showPCKeys;
+            document.querySelectorAll('.pc-key-label').forEach(el => {
+                el.classList.toggle('hidden', !showPCKeys);
+            });
+            document.getElementById('lblToggleKeys').textContent = showPCKeys ? 'Sembunyikan Tombol PC' : 'Tampilkan Tombol PC';
+        });
+
+        // Control Volume
+        document.getElementById('volumeControl').addEventListener('input', (e) => {
+            if (masterGain) {
+                masterGain.gain.value = parseFloat(e.target.value);
+            }
+        });
+
+        // Mode Latihan Lagu
+        let isPlayingSong = false;
+        document.getElementById('btnPlaySong').addEventListener('click', async () => {
+            const songKey = document.getElementById('songSelect').value;
+            if (songKey === 'none' || isPlayingSong) return;
+
+            const songNotes = songs[songKey];
+            if (!songNotes) return;
+
+            isPlayingSong = true;
+            document.getElementById('songStatus').classList.remove('hidden');
+            document.getElementById('btnPlaySong').disabled = true;
+            document.getElementById('btnPlaySong').classList.add('opacity-50');
+
+            for (let item of songNotes) {
+                const noteObj = keyData.find(k => k.note === item.note);
+                if (noteObj) {
+                    const keyEl = document.getElementById(`key-${noteObj.note}`);
+                    if (keyEl) keyEl.classList.add('highlight');
+
+                    playNote(noteObj);
+                    await new Promise(r => setTimeout(r, item.duration * 0.8));
+                    stopNote(noteObj);
+
+                    if (keyEl) keyEl.classList.remove('highlight');
+                    await new Promise(r => setTimeout(r, item.duration * 0.2));
+                }
+            }
+
+            isPlayingSong = false;
+            document.getElementById('songStatus').classList.add('hidden');
+            document.getElementById('btnPlaySong').disabled = false;
+            document.getElementById('btnPlaySong').classList.remove('opacity-50');
+        });
+
+        // Render Keyboard pada awal loading
+        window.onload = () => {
+            renderKeyboard();
+        };
+    </script>
+</body>
+</html>
